@@ -134,8 +134,8 @@ extension CommandRegistry {
 	/// If a matching command could not be found or a usage error occurred,
 	/// a helpful error message will be written to `stderr`, then the process
 	/// will exit with a failure error code.
-	public func main(defaultVerb: String, errorHandler: (ClientError) -> Void) -> Never  {
-		main(arguments: CommandLine.arguments, defaultVerb: defaultVerb, errorHandler: errorHandler)
+	public func main(defaultVerb: String, successHandler: (() -> Void)? = nil, errorHandler: ((ClientError) -> Void)? = nil) -> Never  {
+		main(arguments: CommandLine.arguments, defaultVerb: defaultVerb, successHandler: successHandler, errorHandler: errorHandler)
 	}
 
 	/// Hands off execution to the CommandRegistry, by parsing `arguments`
@@ -155,7 +155,7 @@ extension CommandRegistry {
 	/// If a matching command could not be found or a usage error occurred,
 	/// a helpful error message will be written to `stderr`, then the process
 	/// will exit with a failure error code.
-	public func main(arguments: [String], defaultVerb: String, errorHandler: (ClientError) -> Void) -> Never  {
+	public func main(arguments: [String], defaultVerb: String, successHandler: (() -> Void)? = nil, errorHandler: ((ClientError) -> Void)? = nil) -> Never  {
 		assert(arguments.count >= 1)
 
 		var arguments = arguments
@@ -173,6 +173,7 @@ extension CommandRegistry {
 
 		switch run(command: verb, arguments: arguments) {
 		case .success?:
+			successHandler?()
 			exit(EXIT_SUCCESS)
 
 		case let .failure(error)?:
@@ -181,7 +182,7 @@ extension CommandRegistry {
 				fputs(description + "\n", stderr)
 
 			case let .commandError(error):
-				errorHandler(error)
+				errorHandler?(error)
 			}
 
 			exit(EXIT_FAILURE)
